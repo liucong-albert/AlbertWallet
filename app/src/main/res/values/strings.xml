@@ -1,0 +1,4 @@
+<resources>
+    <string name="app_name">AlbertWallet</string>
+    <string name = "desc">this is wallet</string>
+</resources>
