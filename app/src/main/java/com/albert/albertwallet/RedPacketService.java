@@ -14,6 +14,7 @@ import android.widget.Toast;
 import java.io.DataOutputStream;
 import java.io.OutputStream;
 import java.util.List;
+import java.util.concurrent.locks.Lock;
 
 
 /**
@@ -27,13 +28,16 @@ public class RedPacketService extends AccessibilityService {
     @Override
     public void onAccessibilityEvent(AccessibilityEvent event) {
         int eventType = event.getEventType();
+        AccessibilityNodeInfo rootNode = getRootInActiveWindow();
         switch (eventType) {
             //每次在聊天界面中有新消息到来时都出触发该事件
             case AccessibilityEvent.TYPE_VIEW_SCROLLED:
-                //获取当前聊天页面的根布局
-                AccessibilityNodeInfo rootNode = getRootInActiveWindow();
                 //获取聊天信息
-                getWeChatLog(rootNode);
+                checkData(rootNode);
+                break;
+            case AccessibilityEvent.TYPE_WINDOW_CONTENT_CHANGED:
+                openRedPack(rootNode);
+                closeRedPack(rootNode);
                 break;
         }
     }
@@ -43,43 +47,100 @@ public class RedPacketService extends AccessibilityService {
 
     }
 
+
+    synchronized private void closeRedPack(AccessibilityNodeInfo rootNode){
+        if (rootNode == null){
+            return;
+        }
+        for (int j = 0; j < rootNode.getChildCount(); j++) {
+            AccessibilityNodeInfo myinfo = rootNode.getChild(j);
+            List<AccessibilityNodeInfo> list = myinfo.findAccessibilityNodeInfosByText("红包记录");
+            if (list.size() > 0){
+                Log.e("-----------", "找到RedPacket领取页面");
+                AccessibilityNodeInfo iteminfo = list.get(0);
+                AccessibilityNodeInfo parentInfo = iteminfo.getParent();
+                doClose(parentInfo);
+                break;
+            }
+        }
+    }
+
+    synchronized private void doClose(AccessibilityNodeInfo parentInfo){
+        int size = parentInfo.getChildCount();
+        for (int j = 0; j <size; j++) {
+            AccessibilityNodeInfo myinfo = parentInfo.getChild(j);
+            if (!myinfo.getClassName().equals("android.widget.ImageView")) {
+                findImg(myinfo);
+            }else{
+                Log.e("-----------", "找到关闭RedPacket按钮");
+                try{
+                    Thread.sleep(200);
+                }catch ( Exception e){
+                    e.printStackTrace();
+                }
+                perforGlobalClick(myinfo);
+                return;
+            }
+        }
+    }
+
+
+    private void openRedPack(AccessibilityNodeInfo rootNode){
+        if (rootNode == null){
+            return;
+        }
+        for (int j = 0; j < rootNode.getChildCount(); j++) {
+            AccessibilityNodeInfo myinfo = rootNode.getChild(j);
+            List<AccessibilityNodeInfo> list = myinfo.findAccessibilityNodeInfosByText("发了一个");
+            if (list.size() > 0){
+                Log.e("-----------", "找到RedPacket页面");
+                AccessibilityNodeInfo iteminfo = list.get(0);
+                AccessibilityNodeInfo parentInfo = iteminfo.getParent();
+                findImg(parentInfo);
+                break;
+            }
+        }
+    }
+
+    synchronized private void findImg(AccessibilityNodeInfo parentInfo){
+        int size = parentInfo.getChildCount()-1;
+        for (int j = size; j > 0; j--) {
+            AccessibilityNodeInfo myinfo = parentInfo.getChild(j);
+            if (!myinfo.getClassName().equals("android.widget.ImageView")) {
+                findImg(myinfo);
+            }else{
+                Log.e("-----------", "找到打开RedPacket按钮");
+                try{
+                    Thread.sleep(200);
+                }catch ( Exception e){
+                    e.printStackTrace();
+                }
+                perforGlobalClick(myinfo);
+                return;
+            }
+        }
+    }
+
     /**
      * 遍历
      */
-    @RequiresApi(api = Build.VERSION_CODES.JELLY_BEAN_MR2)
-    private void getWeChatLog(AccessibilityNodeInfo rootNode) {
-//        List<AccessibilityNodeInfo> nodeInfoList =  rootNode.findAccessibilityNodeInfosByViewId("com.telegram.btcchat:id/a");
-        CharSequence name = rootNode.getClassName();
-        if (name.equals("org.telegram.messenger.support.widget.RecyclerView")){
-            Log.e("demo", " 找到listview");
+    synchronized private void checkData(AccessibilityNodeInfo rootNode) {
+        if (rootNode == null){
+            return;
         }
-
-        checkData(rootNode);
-//        List<AccessibilityNodeInfo> list = rootNode.findAccessibilityNodeInfosByText("领取红包");
-//        for (AccessibilityNodeInfo n : list) {
-//            Log.i("demo", "n isClick:"+n.isClickable());
-//            AccessibilityNodeInfo parent = n.getParent();
-//            Log.i("demo", "parent isClick:"+parent.isClickable());
-//            Log.e("-----------", "发现红包");
-//            n.performAction(AccessibilityNodeInfo.ACTION_CLICK);
-//        }
-    }
-
-    public void checkData(AccessibilityNodeInfo rootNode) {
         for (int j = 0; j < rootNode.getChildCount(); j++) {
             AccessibilityNodeInfo myinfo = rootNode.getChild(j);
-            int size = myinfo.getChildCount();
             if (!myinfo.getClassName().equals("org.telegram.messenger.support.widget.RecyclerView")) {
                 checkData(myinfo);
             } else {
-                Log.e("----------", "找到啦！！！！！！！！！！！！！！！");
-                Log.e("demo", "myinfo isClick:" + myinfo.isClickable());
                 List<AccessibilityNodeInfo> list = myinfo.findAccessibilityNodeInfosByText("领取红包");
-                for(int c = 0 ; c < list.size() ; c++){
-                    Log.e("-----------", "发现红包");
-                    AccessibilityNodeInfo iteminfo = list.get(c);
-                    Log.e("-----------", "iteminfo "+iteminfo.isClickable());
+                Log.e("-----------", "找到可领取的RedPacket "+list.size());
+                if (list.size() > 0){
+                    Log.e("-----------", "发现RedPacket");
+                    AccessibilityNodeInfo iteminfo = list.get(0);
                     perforGlobalClick(iteminfo);
+                    Log.e("-----------", "点击RedPacket");
+                    return;
                 }
             }
         }
