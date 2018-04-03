@@ -134,12 +134,11 @@ public class RedPacketService extends AccessibilityService {
                 checkData(myinfo);
             } else {
                 List<AccessibilityNodeInfo> list = myinfo.findAccessibilityNodeInfosByText("领取红包");
-                Log.e("-----------", "找到可领取的RedPacket "+list.size());
+                Log.e("-----------", "成功领取的RedPacket "+list.size());
                 if (list.size() > 0){
-                    Log.e("-----------", "发现RedPacket");
                     AccessibilityNodeInfo iteminfo = list.get(0);
                     perforGlobalClick(iteminfo);
-                    Log.e("-----------", "点击RedPacket");
+                    Log.e("-----------", "领取完成点击返回");
                     return;
                 }
             }
