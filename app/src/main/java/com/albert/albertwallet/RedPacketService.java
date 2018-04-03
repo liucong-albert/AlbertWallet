@@ -1,21 +1,13 @@
 package com.albert.albertwallet;
 
 import android.accessibilityservice.AccessibilityService;
-import android.content.Intent;
 import android.graphics.Rect;
-import android.os.Build;
-import android.support.annotation.RequiresApi;
-import android.text.TextUtils;
 import android.util.Log;
 import android.view.accessibility.AccessibilityEvent;
 import android.view.accessibility.AccessibilityNodeInfo;
-import android.widget.Toast;
-
 import java.io.DataOutputStream;
 import java.io.OutputStream;
 import java.util.List;
-import java.util.concurrent.locks.Lock;
-
 
 /**
  * Created by liuc on 2018-04-02.
@@ -38,6 +30,7 @@ public class RedPacketService extends AccessibilityService {
             case AccessibilityEvent.TYPE_WINDOW_CONTENT_CHANGED:
                 openRedPack(rootNode);
                 closeRedPack(rootNode);
+                findDown(rootNode);
                 break;
         }
     }
@@ -45,6 +38,40 @@ public class RedPacketService extends AccessibilityService {
     @Override
     public void onInterrupt() {
 
+    }
+
+    synchronized private void findDown(AccessibilityNodeInfo rootNode){
+        if (rootNode == null){
+            return;
+        }
+        for (int j = 0; j < rootNode.getChildCount(); j++) {
+            AccessibilityNodeInfo myinfo = rootNode.getChild(j);
+//            List<AccessibilityNodeInfo> list = myinfo.findAccessibilityNodeInfosByText("红包记录");
+            if (myinfo.getChildCount() == 6){
+                Log.e("-----------", "出现下拉按钮");
+                clickDown(myinfo);
+                break;
+            }else{
+                findDown(myinfo);
+            }
+        }
+    }
+
+    private void clickDown(AccessibilityNodeInfo rootNode){
+        if (rootNode == null){
+            return;
+        }
+        for (int j = 0; j < rootNode.getChildCount(); j++) {
+            AccessibilityNodeInfo myinfo = rootNode.getChild(j);
+            if (j == 5){
+                Log.e("-----------", ""+myinfo.getClassName());
+                Log.e("-----------", "点击按钮");
+                perforGlobalClick(myinfo);
+                break;
+            }else{
+                findDown(myinfo);
+            }
+        }
     }
 
 
