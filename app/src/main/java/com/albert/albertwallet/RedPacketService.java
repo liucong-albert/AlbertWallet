@@ -2,6 +2,9 @@ package com.albert.albertwallet;
 
 import android.accessibilityservice.AccessibilityService;
 import android.graphics.Rect;
+import android.os.Build;
+import android.os.Handler;
+import android.support.annotation.RequiresApi;
 import android.util.Log;
 import android.view.accessibility.AccessibilityEvent;
 import android.view.accessibility.AccessibilityNodeInfo;
@@ -81,11 +84,6 @@ public class RedPacketService extends AccessibilityService {
         }
         List<AccessibilityNodeInfo> list = rootNode.findAccessibilityNodeInfosByText("红包记录");
         if (list.size() > 0){
-            long  time1 = System.currentTimeMillis();
-            if (time1 - time3 <1000){
-                return;
-            }
-            time3 = System.currentTimeMillis();
             Log.e("-----------", "找到RedPacket领取页面");
             AccessibilityNodeInfo iteminfo = list.get(0);
             AccessibilityNodeInfo parentInfo = iteminfo.getParent();
@@ -114,11 +112,6 @@ public class RedPacketService extends AccessibilityService {
         }
         List<AccessibilityNodeInfo> list = rootNode.findAccessibilityNodeInfosByText("发了一个");
         if (list.size() > 0){
-            long  time1 = System.currentTimeMillis();
-            if (time1 - time2 <1000){
-                return;
-            }
-            time2 = System.currentTimeMillis();
             Log.e("-----------", "打开RedPacket");
             AccessibilityNodeInfo iteminfo = list.get(0);
             AccessibilityNodeInfo parentInfo = iteminfo.getParent();
@@ -143,36 +136,50 @@ public class RedPacketService extends AccessibilityService {
     /**
      * 遍历
      */
-    long time = 0;
-    long time2 = 0;
-    long time3 = 0;
+    private long time = 0;
     synchronized private void checkData(AccessibilityNodeInfo rootNode) {
         if (rootNode == null){
             return;
         }
+        long time1 = System.currentTimeMillis();
+        if (time1-time < 200 ){
+            return;
+        }
+        time = time1;
         List<AccessibilityNodeInfo> list = rootNode.findAccessibilityNodeInfosByText("领取红包");
         if (list.size() > 0){
-            Log.e("-----------", "time = "+time);
-            long  time1 = System.currentTimeMillis();
-            if (time1 - time <1000){
-                return;
-            }
-            time = System.currentTimeMillis();
-            Log.e("-----------", "time  init = "+time);
-
             AccessibilityNodeInfo iteminfo = list.get(0);
-            perforGlobalClick(iteminfo);
             Log.e("-----------", "发现RedPacket");
+            perforGlobalClick1(iteminfo);
             return;
         }
     }
+    Handler handler = new Handler();
+    Runnable runnable = new Runnable() {
+        @Override
+        public void run() {
+            perforGlobalClick(centerx,centery);
+        }
+    };
 
-    public static void perforGlobalClick(AccessibilityNodeInfo info) {
+    public  void perforGlobalClick(AccessibilityNodeInfo info) {
         Rect rect = new Rect();
         info.getBoundsInScreen(rect);
-        perforGlobalClick(rect.centerX(), rect.centerY());
+        perforGlobalClick(rect.centerX(),rect.centerY());
     }
-
+    private int centerx;
+    private int centery;
+    public  void perforGlobalClick1(AccessibilityNodeInfo info) {
+        Rect rect = new Rect();
+        info.getBoundsInScreen(rect);
+        centerx = rect.centerX();
+        centery = rect.centerY();
+        if (centery < 163 || centery > 1185){
+            handler.removeCallbacks(runnable);
+            return;
+        }
+        handler.postDelayed(runnable,200);
+    }
     public static void perforGlobalClick(int x, int y) {
         execShellCmd("input tap " + x + " " + y);
     }
