@@ -12,6 +12,8 @@ import java.io.DataOutputStream;
 import java.io.OutputStream;
 import java.util.List;
 
+import static android.view.accessibility.AccessibilityEvent.TYPE_VIEW_FOCUSED;
+
 /**
  * Created by liuc on 2018-04-02.
  * 主要内容：
@@ -24,13 +26,16 @@ public class RedPacketService extends AccessibilityService {
     public void onAccessibilityEvent(AccessibilityEvent event) {
         int eventType = event.getEventType();
         AccessibilityNodeInfo rootNode = getRootInActiveWindow();
+        Log.e("TAG","onAccessibilityEvent 收到消息 = "+eventType);
+
         switch (eventType) {
-            //每次在聊天界面中有新消息到来时都出触发该事件
             case AccessibilityEvent.TYPE_VIEW_SCROLLED:
                 //获取聊天信息
                 checkData(rootNode);
                 break;
             case AccessibilityEvent.TYPE_WINDOW_CONTENT_CHANGED:
+                Log.e("TAG","TYPE_WINDOW_CONTENT_CHANGED 窗口内容发生变化");
+                checkData(rootNode);
                 openRedPack(rootNode);
                 closeRedPack(rootNode);
 //                findDown(rootNode);
